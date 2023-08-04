@@ -1,0 +1,3 @@
+[submodule "vendor/znet"]
+	path = vendor/znet
+	url = https://github.com/irrld/znet
