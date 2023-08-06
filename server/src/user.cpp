@@ -33,14 +33,14 @@ User::User(ChatServer& server, int user_id,
   message_packet->AddReceiveCallback(ZNET_BIND_FN(OnMessage));
   handler.AddPacketHandler(message_packet);
 
-  auto user_connected_packet =
-      CreateRef<PacketHandler<UserConnectedPacket, UserConnectedPacketSerializerV1>>();
+  auto user_connected_packet = CreateRef<
+      PacketHandler<UserConnectedPacket, UserConnectedPacketSerializerV1>>();
   handler.AddPacketHandler(user_connected_packet);
 
   auto user_disconnected_packet =
-       CreateRef<PacketHandler<UserDisconnectedPacket, UserDisconnectedPacketSerializerV1>>();
+      CreateRef<PacketHandler<UserDisconnectedPacket,
+                              UserDisconnectedPacketSerializerV1>>();
   handler.AddPacketHandler(user_disconnected_packet);
-
 }
 
 void User::SendPacket(Ref<znet::Packet> packet) {
@@ -50,6 +50,7 @@ void User::SendPacket(Ref<znet::Packet> packet) {
 void User::OnLoginRequest(znet::ConnectionSession& session,
                           Ref<LoginRequestPacket> packet) {
   ZNET_LOG_DEBUG("Received login request");
+  // username validation!
   username_ = packet->username_;
   password_ = packet->password_;
   // check registration

@@ -1,3 +1,6 @@
 [submodule "vendor/znet"]
 	path = vendor/znet
 	url = https://github.com/irrld/znet
+[submodule "vendor/wiesel"]
+	path = vendor/wiesel
+	url = https://github.com/irrld/wiesel

@@ -16,38 +16,29 @@ ChatServer::ChatServer() {
   ServerConfig config{"0.0.0.0", 25333};
 
   // Create server with the config
-  server_ = {config};
+  server_ = CreateRef<Server>(config);
 
   // Register signal handlers (optional)
   RegisterSignalHandler([this](Signal sig) -> bool {
     if (sig == znet::kSignalInterrupt) {
       // stop the server when SIGINT is received
-      server_.Stop();
-      return server_.shutdown_complete();
+      server_->Stop();
+      return server_->shutdown_complete();
     }
     return false;
   });
 
   // Set event callback
-  server_.SetEventCallback(ZNET_BIND_FN(OnEvent));
+  server_->SetEventCallback(ZNET_BIND_FN(OnEvent));
 }
 
 void ChatServer::Start() {
   server_thread_ = CreateRef<std::thread>([this]() {
     // Bind and listen
-    server_.Bind();
-    server_.Listen();
+    server_->Bind();
+    server_->Listen();
   });
-  server_thread_->detach();
-
-  while (true) {
-    std::string in;
-    std::cin >> in;
-    if (in == "?stop") {
-      server_.Stop();
-      break;
-    }
-  }
+  server_thread_->join();
 }
 
 void ChatServer::OnEvent(znet::Event& event) {

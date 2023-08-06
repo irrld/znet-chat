@@ -32,8 +32,9 @@ class ChatServer {
   const std::unordered_map<int, std::string>& user_list() const {
     return user_list_;
   }
+
  private:
-  Server server_;
+  Ref<Server> server_;
   std::unordered_map<int, std::string> user_list_;
   std::unordered_map<int, Ref<User>> connected_users_;
   std::unordered_map<int, Ref<User>> pending_users_;

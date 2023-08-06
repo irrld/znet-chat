@@ -55,7 +55,6 @@ class MessagePacket : public Packet {
   static PacketId PacketId() { return 4; }
 };
 
-
 class UserConnectedPacket : public Packet {
  public:
   UserConnectedPacket() : Packet(PacketId()) {}
@@ -123,13 +122,15 @@ class ServerSettingsPacketSerializerV1
 
   Ref<Buffer> Serialize(Ref<ServerSettingsPacket> packet,
                         Ref<Buffer> buffer) override {
-    buffer->WriteMap(packet->user_list_, &Buffer::WriteInt<int>, &Buffer::WriteString);
+    buffer->WriteMap(packet->user_list_, &Buffer::WriteInt<int>,
+                     &Buffer::WriteString);
     return buffer;
   }
 
   Ref<ServerSettingsPacket> Deserialize(Ref<Buffer> buffer) override {
     auto packet = CreateRef<ServerSettingsPacket>();
-    packet->user_list_ = buffer->ReadMap<int, std::string>(&Buffer::ReadInt<int>, &Buffer::ReadString);
+    packet->user_list_ = buffer->ReadMap<std::unordered_map<int, std::string>>(
+        &Buffer::ReadInt<int>, &Buffer::ReadString);
     return packet;
   }
 };
@@ -157,7 +158,8 @@ class MessagePacketSerializerV1 : public PacketSerializer<MessagePacket> {
   }
 };
 
-class UserConnectedPacketSerializerV1 : public PacketSerializer<UserConnectedPacket> {
+class UserConnectedPacketSerializerV1
+    : public PacketSerializer<UserConnectedPacket> {
  public:
   UserConnectedPacketSerializerV1() : PacketSerializer<UserConnectedPacket>() {}
 
@@ -176,9 +178,11 @@ class UserConnectedPacketSerializerV1 : public PacketSerializer<UserConnectedPac
   }
 };
 
-class UserDisconnectedPacketSerializerV1 : public PacketSerializer<UserDisconnectedPacket> {
+class UserDisconnectedPacketSerializerV1
+    : public PacketSerializer<UserDisconnectedPacket> {
  public:
-  UserDisconnectedPacketSerializerV1() : PacketSerializer<UserDisconnectedPacket>() {}
+  UserDisconnectedPacketSerializerV1()
+      : PacketSerializer<UserDisconnectedPacket>() {}
 
   Ref<Buffer> Serialize(Ref<UserDisconnectedPacket> packet,
                         Ref<Buffer> buffer) override {

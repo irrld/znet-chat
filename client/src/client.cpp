@@ -1,46 +1,54 @@
 #include "client.h"
 #include "packets.h"
 
-ChatClient::ChatClient(const std::string& ip, const std::string& username, const std::string& password) {
-    username_ = username;
-    password_ = password;
+ChatClient::ChatClient(const std::string& ip, const std::string& username,
+                       const std::string& password) {
+  username_ = username;
+  password_ = password;
+  result_ = Result::Failure;
 
-    ClientConfig config{
-        .server_ip_ = ip,
-        .server_port_ = 25333
-    };
-    client_ = CreateRef<Client>(config);
-    client_->SetEventCallback(ZNET_BIND_FN(OnEvent));
-    thread_ = CreateRef<std::thread>([this]() {
-      client_->Bind();
-      client_->Connect();
-    });
+  ClientConfig config{.server_ip_ = ip, .server_port_ = 25333};
+  client_ = CreateRef<Client>(config);
+  client_->SetEventCallback(ZNET_BIND_FN(OnEvent));
 }
 
 ChatClient::~ChatClient() {
-    client_->Disconnect();
+  client_->Disconnect();
+  if (thread_ && thread_->joinable()) {
     thread_->join();
+  }
+}
+
+void ChatClient::Connect() {
+  thread_ = CreateRef<std::thread>([this]() {
+    if (client_->Bind() != Result::Success) {
+      SetResult(Result::CannotBind);
+      return;
+    }
+    SetResult(client_->Connect());
+  });
 }
 
 void ChatClient::SendMessage(const std::string& message) {
-    auto session = client_->client_session();
-    Ref<MessagePacket> packet = CreateRef<MessagePacket>();
-    packet->message_ = message;
-    session->SendPacket(packet);
+  auto session = client_->client_session();
+  Ref<MessagePacket> packet = CreateRef<MessagePacket>();
+  packet->message_ = message;
+  session->SendPacket(packet);
 }
 
 bool ChatClient::CanSendMessage() {
-    return true;
+  return true;
 }
 
 void ChatClient::OnEvent(znet::Event& event) {
-    EventDispatcher dispatcher{event};
+  EventDispatcher dispatcher{event};
 
-    dispatcher.Dispatch<ClientConnectedToServerEvent>(
-        ZNET_BIND_FN(OnClientConnect));
+  dispatcher.Dispatch<ClientConnectedToServerEvent>(
+      ZNET_BIND_FN(OnClientConnect));
 }
 
 bool ChatClient::OnClientConnect(ClientConnectedToServerEvent& event) {
+  SetResult(Result::Success);
   ZNET_LOG_DEBUG("Connection successful!");
 
   HandlerLayer& handler = event.session()->handler_layer();
@@ -95,7 +103,7 @@ bool ChatClient::OnClientConnect(ClientConnectedToServerEvent& event) {
   auto message_packet =
       CreateRef<PacketHandler<MessagePacket, MessagePacketSerializerV1>>();
   message_packet->AddReceiveCallback([this](ConnectionSession& session,
-                                        Ref<MessagePacket> packet) {
+                                            Ref<MessagePacket> packet) {
     if (expected_packet_ != 0) {
       ZNET_LOG_DEBUG("Received packet MessagePacket but it was not expected!");
       session.Close();
@@ -110,25 +118,26 @@ bool ChatClient::OnClientConnect(ClientConnectedToServerEvent& event) {
   });
   handler.AddPacketHandler(message_packet);
 
-  auto user_connected_packet =
-      CreateRef<PacketHandler<UserConnectedPacket, UserConnectedPacketSerializerV1>>();
-  user_connected_packet->AddReceiveCallback([this](ConnectionSession& session,
-                                            Ref<UserConnectedPacket> packet) {
-    user_connected_callback_(packet);
-    return false;
-  });
+  auto user_connected_packet = CreateRef<
+      PacketHandler<UserConnectedPacket, UserConnectedPacketSerializerV1>>();
+  user_connected_packet->AddReceiveCallback(
+      [this](ConnectionSession& session, Ref<UserConnectedPacket> packet) {
+        user_connected_callback_(packet);
+        return false;
+      });
   handler.AddPacketHandler(user_connected_packet);
 
   auto user_disconnected_packet =
-      CreateRef<PacketHandler<UserDisconnectedPacket, UserDisconnectedPacketSerializerV1>>();
-  user_disconnected_packet->AddReceiveCallback([this](ConnectionSession& session,
-                                                   Ref<UserDisconnectedPacket> packet) {
-    if (packet->user_id_ == user_id_) {
-      return false;
-    }
-    user_disconnected_callback_(packet);
-    return false;
-  });
+      CreateRef<PacketHandler<UserDisconnectedPacket,
+                              UserDisconnectedPacketSerializerV1>>();
+  user_disconnected_packet->AddReceiveCallback(
+      [this](ConnectionSession& session, Ref<UserDisconnectedPacket> packet) {
+        if (packet->user_id_ == user_id_) {
+          return false;
+        }
+        user_disconnected_callback_(packet);
+        return false;
+      });
   handler.AddPacketHandler(user_disconnected_packet);
 
   auto packet = CreateRef<LoginRequestPacket>();
@@ -140,3 +149,7 @@ bool ChatClient::OnClientConnect(ClientConnectedToServerEvent& event) {
   return false;
 }
 
+void ChatClient::SetResult(Result result) {
+  result_ = result;
+  result_callback_(result);
+}
