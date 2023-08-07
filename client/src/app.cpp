@@ -59,6 +59,16 @@ void ChatOverlay::OnImGuiRender() {
                ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize |
                    ImGuiWindowFlags_NoBringToFrontOnFocus |
                    ImGuiWindowFlags_NoMove);
+  ImGui::Text("zchat by Metehan \"irrelevantdev\" Gezer");
+  if (ImGui::Button("znet-chat: https://github.com/irrld/znet-chat")) {
+    OpenLink("https://github.com/irrld/znet-chat");
+  }
+  if (ImGui::Button("znet: https://github.com/irrld/znet")) {
+    OpenLink("https://github.com/irrld/znet-chat");
+  }
+  if (ImGui::Button("wiesel: https://github.com/irrld/wiesel")) {
+    OpenLink("https://github.com/irrld/wiesel");
+  }
   ImGui::PopStyleVar(1);
   if (cleanup_) {
     cleanup_ = false;
