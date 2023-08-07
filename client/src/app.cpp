@@ -22,6 +22,7 @@
 #include "w_entrypoint.hpp"
 
 #include <random>
+#include "theme.h"
 
 using namespace Wiesel;
 
@@ -35,6 +36,8 @@ ChatOverlay::~ChatOverlay() = default;
 void ChatOverlay::OnAttach() {
   LOG_DEBUG("OnAttach");
   Engine::GetRenderer()->SetVsync(true);
+  ImGui::StyleColorsDark(&ImGui::GetStyle());
+  ImGui::SetupImGuiStyle();
 }
 
 void ChatOverlay::OnDetach() {
