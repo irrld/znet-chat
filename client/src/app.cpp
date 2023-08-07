@@ -75,17 +75,38 @@ void ChatOverlay::OnImGuiRender() {
     client_ = nullptr;
   }
   if (client_) {
-    ImGui::Begin("Chat", nullptr, ImGuiWindowFlags_NoCollapse);
-    for (const auto& item : messages_) {
-      ImGui::TextWrapped("%s", item.c_str());
-    }
-    // Get remaining vertical space available in the current window
-    ImVec2 contentRegionAvail = ImGui::GetContentRegionAvail();
+    ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_FirstUseEver);
+    ImGui::Begin("Chat");
+    // Reserve enough left-over height for 1 separator + 1 input text
+    const float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
+    if (ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footer_height_to_reserve), false, ImGuiWindowFlags_HorizontalScrollbar)) {
+      for (int i = 0; i < messages_.size(); i++) {
+        auto& item = messages_[i];
+        ImVec4 prefix_color{item.prefix_color_.Red, item.prefix_color_.Green, item.prefix_color_.Blue, item.prefix_color_.Alpha};
+        ImVec4 text_color{item.text_color_.Red, item.text_color_.Green, item.text_color_.Blue, item.text_color_.Alpha};
+        ImGui::PushStyleColor(ImGuiCol_Text, prefix_color);
+        ImGui::TextWrapped("%s:", item.prefix_.c_str());
+        ImGui::PopStyleColor();
+        ImGui::SameLine();
+        ImGui::PushStyleColor(ImGuiCol_Text, text_color);
+        ImGui::TextWrapped("%s", item.text_.c_str());
+        ImGui::PopStyleColor();
+      }
 
+      // Keep up at the bottom of the scroll region if we were already at the bottom at the beginning of the frame.
+      // Using a scrollbar or mouse-wheel will take away from the bottom edge.
+      if (scroll_to_bottom_ || (auto_scroll_ && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
+        ImGui::SetScrollHereY(1.0f);
+      scroll_to_bottom_ = false;
+    }
+    ImGui::EndChild();
+    ImGui::Separator();
+
+    ImVec2 contentRegionAvail = ImGui::GetContentRegionAvail();
     // Set the cursor position to the bottom of the available space
     float inputTextHeight = ImGui::GetTextLineHeightWithSpacing();
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + contentRegionAvail.y -
-                         inputTextHeight);
+                         inputTextHeight - ImGui::GetStyle().SeparatorTextPadding.y + ImGui::GetStyle().WindowPadding.x);
     static const int kSendButtonWidth = 80;
     float inputTextWidth =
         ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x -
@@ -99,6 +120,7 @@ void ChatOverlay::OnImGuiRender() {
     }
     if (ImGui::InputText("##", &chat_, ImGuiInputTextFlags_None | ImGuiInputTextFlags_EnterReturnsTrue)) {
       send = true;
+      focus_input_ = true;
     }
     ImGui::SetItemDefaultFocus();
     ImGui::PopItemWidth();
@@ -109,18 +131,38 @@ void ChatOverlay::OnImGuiRender() {
     }
     if (ImGui::Button("Send", ImVec2(kSendButtonWidth, 0))) {
       send = true;
+      focus_input_ = true;
     }
     if (disable) {
       ImGui::EndDisabled();
       send = false;
     }
     if (send) {
-      client_->SendMessage(chat_);
-      messages_.push_back(client_->username() + ": " + chat_);
+      client_->SendChat(chat_);
+      Message message{
+          .prefix_ = client_->username(),
+          .prefix_color_ = {0.8f, 0.8f, 0.8f, 1.0f},
+          .text_ = chat_,
+          .text_color_ = {1.0f, 1.0f, 1.0f, 1.0f}
+      };
+      messages_.push_back(message);
+
       chat_ = "";
-      focus_input_ = true;
     }
+
     ImGui::End();
+
+/*
+
+    ImGui::Begin("Chat", nullptr, ImGuiWindowFlags_NoCollapse);
+    // Get remaining vertical space available in the current window
+    ImGui::BeginGroup();
+    for (const auto& item : messages_) {
+      ImGui::TextWrapped("%s", item.c_str());
+    }
+
+    ImGui::EndGroup();
+    ImGui::End();*/
 
     ImGui::Begin("Users", nullptr, ImGuiWindowFlags_NoCollapse);
     for (const auto& [key, value] : users_) {
@@ -177,7 +219,13 @@ void ChatOverlay::OnImGuiRender() {
 
 void ChatOverlay::OnMessage(znet::Ref<MessagePacket> packet) {
   std::scoped_lock lock(mutex_);
-  messages_.push_back(packet->sender_username_ + ": " + packet->message_);
+  Message message{
+      .prefix_ = packet->sender_username_,
+      .prefix_color_ = {1.0f, 1.0f, 1.0f, 1.0f},
+      .text_ = packet->message_,
+      .text_color_ = {1.0f, 1.0f, 1.0f, 1.0f}
+  };
+  messages_.push_back(message);
 }
 
 void ChatOverlay::OnUserConnect(znet::Ref<UserConnectedPacket> packet) {

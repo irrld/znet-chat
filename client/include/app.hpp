@@ -19,6 +19,7 @@
 #include "scene/w_scene.hpp"
 #include "w_application.hpp"
 #include "w_pch.hpp"
+#include "util/w_color.hpp"
 
 namespace WieselDemo {
 class ChatApplication : public Wiesel::Application {
@@ -54,12 +55,19 @@ class ChatOverlay : public Wiesel::Layer {
   bool warning_showed_ = false;
   std::mutex mutex_;
   bool cleanup_ = false;
-  std::vector<std::string> messages_;
+  struct Message {
+    Wiesel::Colorf prefix_color_;
+    std::string prefix_;
+    Wiesel::Colorf text_color_;
+    std::string text_;
+  };
+  std::vector<Message> messages_;
   std::unordered_map<int, std::string> users_;
   std::string chat_;
   std::string ip_;
   std::string username_;
   bool focus_input_;
-
+  bool auto_scroll_ = true;
+  bool scroll_to_bottom_ = true;
 };
 }  // namespace WieselDemo

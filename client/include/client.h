@@ -19,7 +19,7 @@ class ChatClient {
 
   void Connect();
 
-  void SendMessage(const std::string& message);
+  void SendChat(const std::string& message);
 
   void SetMessageCallback(PacketCallbackFn<MessagePacket> fn) {
     callback_ = std::move(fn);

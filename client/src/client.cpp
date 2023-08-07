@@ -29,7 +29,7 @@ void ChatClient::Connect() {
   });
 }
 
-void ChatClient::SendMessage(const std::string& message) {
+void ChatClient::SendChat(const std::string& message) {
   auto session = client_->client_session();
   Ref<MessagePacket> packet = CreateRef<MessagePacket>();
   packet->message_ = message;
