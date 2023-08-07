@@ -53,13 +53,13 @@ class ChatOverlay : public Wiesel::Layer {
   std::string warning_;
   bool warning_showed_ = false;
   std::mutex mutex_;
-  bool loading_ = false;
   bool cleanup_ = false;
   std::vector<std::string> messages_;
   std::unordered_map<int, std::string> users_;
-  std::string chat;
-  std::string ip;
-  std::string username;
+  std::string chat_;
+  std::string ip_;
+  std::string username_;
+  bool focus_input_;
 
 };
 }  // namespace WieselDemo

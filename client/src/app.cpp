@@ -93,35 +93,56 @@ void ChatOverlay::OnImGuiRender() {
 
     ImGui::PushItemWidth(inputTextWidth);
     bool send = false;
-    ImGui::InputText("##", &chat, ImGuiInputTextFlags_None);
+    if (focus_input_) {
+      ImGui::SetKeyboardFocusHere();
+      focus_input_ = false;
+    }
+    if (ImGui::InputText("##", &chat_, ImGuiInputTextFlags_None | ImGuiInputTextFlags_EnterReturnsTrue)) {
+      send = true;
+    }
+    ImGui::SetItemDefaultFocus();
     ImGui::PopItemWidth();
     ImGui::SameLine();
-    if (ImGui::Button("Send", ImVec2(kSendButtonWidth, 0)) || send) {
-      client_->SendMessage(chat);
-      messages_.push_back(client_->username() + ": " + chat);
-      chat = "";
+    bool disable = chat_.empty();
+    if (disable) {
+      ImGui::BeginDisabled();
+    }
+    if (ImGui::Button("Send", ImVec2(kSendButtonWidth, 0))) {
+      send = true;
+    }
+    if (disable) {
+      ImGui::EndDisabled();
+      send = false;
+    }
+    if (send) {
+      client_->SendMessage(chat_);
+      messages_.push_back(client_->username() + ": " + chat_);
+      chat_ = "";
+      focus_input_ = true;
     }
     ImGui::End();
 
     ImGui::Begin("Users", nullptr, ImGuiWindowFlags_NoCollapse);
     for (const auto& [key, value] : users_) {
-      // ImGui will crash if a user has empty username.
+      // ImGui will crash if a user has empty username_.
       if (value.empty())
         continue;
       ImGui::Selectable(value.c_str());
     }
     ImGui::End();
   } else {
-    ImGui::Begin("Connect", nullptr, ImGuiWindowFlags_NoCollapse);
-    ImGui::InputText(PrefixLabel("IP").c_str(), &ip);
-    ImGui::InputText(PrefixLabel("Username").c_str(), &username);
+    ImGui::SetNextWindowPos(ImVec2((viewport->WorkSize.x - 300) / 2, (viewport->WorkSize.y - 120) / 2));
+    ImGui::SetNextWindowSize(ImVec2(300, 120));
+    ImGui::Begin("Connect", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+    ImGui::InputText(PrefixLabel("IP").c_str(), &ip_);
+    ImGui::InputText(PrefixLabel("Username").c_str(), &username_);
     if (ImGui::Button("Connect")) {
-      if (ip.empty() || username.empty()) {
-        warning_ = "IP or username cannot be empty.";
+      if (ip_.empty() || username_.empty()) {
+        warning_ = "IP or username_ cannot be empty.";
         warning_showed_ = true;
       } else {
         cleanup_ = false;
-        client_ = CreateRef<ChatClient>(ip, username, "");
+        client_ = CreateRef<ChatClient>(ip_, username_, "");
         client_->SetMessageCallback(ZNET_BIND_FN(OnMessage));
         client_->SetUserConnectCallback(ZNET_BIND_FN(OnUserConnect));
         client_->SetUserDisconnectCallback(ZNET_BIND_FN(OnUserDisconnect));
@@ -143,8 +164,10 @@ void ChatOverlay::OnImGuiRender() {
     ImGui::End();
   }
   if (!warning_.empty() && warning_showed_) {
+    ImGui::SetNextWindowPos(ImVec2((viewport->WorkSize.x - 400) / 2, (viewport->WorkSize.y - 150) / 2));
+    ImGui::SetNextWindowSize(ImVec2(400, 150));
     if (ImGui::Begin("Warning", &warning_showed_,
-                     ImGuiWindowFlags_NoCollapse)) {
+                     ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove)) {
       ImGui::Text("%s", warning_.c_str());
       ImGui::End();
     }
@@ -190,12 +213,10 @@ void ChatApplication::Init() {
   PushOverlay(CreateReference<ChatOverlay>(*this));
 }
 
-ChatApplication::ChatApplication() : Application({"Wiesel Demo"}) {
-  LOG_DEBUG("DemoApp constructor");
+ChatApplication::ChatApplication() : Application({"Chat App"}) {
 }
 
 ChatApplication::~ChatApplication() {
-  LOG_DEBUG("DemoApp destructor");
 }
 }  // namespace WieselDemo
 

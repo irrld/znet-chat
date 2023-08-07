@@ -50,7 +50,7 @@ void User::SendPacket(Ref<znet::Packet> packet) {
 void User::OnLoginRequest(znet::ConnectionSession& session,
                           Ref<LoginRequestPacket> packet) {
   ZNET_LOG_DEBUG("Received login request");
-  // username validation!
+  // username_ validation!
   username_ = packet->username_;
   password_ = packet->password_;
   // check registration
