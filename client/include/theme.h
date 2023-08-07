@@ -5,7 +5,8 @@
 
 namespace ImGui {
 inline void SetupImGuiStyle() {
-  auto &colors = ImGui::GetStyle().Colors;
+  auto &style = ImGui::GetStyle();
+  auto &colors = style.Colors;
   colors[ImGuiCol_WindowBg] = ImVec4{0.1f, 0.1f, 0.13f, 1.0f};
   colors[ImGuiCol_MenuBarBg] = ImVec4{0.16f, 0.16f, 0.21f, 1.0f};
 
@@ -71,7 +72,6 @@ inline void SetupImGuiStyle() {
   // Docking
   colors[ImGuiCol_DockingPreview] = ImVec4{0.44f, 0.37f, 0.61f, 1.0f};
 
-  auto &style = ImGui::GetStyle();
   style.TabRounding = 4;
   style.ScrollbarRounding = 9;
   style.WindowRounding = 7;
@@ -79,5 +79,6 @@ inline void SetupImGuiStyle() {
   style.FrameRounding = 3;
   style.PopupRounding = 4;
   style.ChildRounding = 4;
+  style.ItemSpacing = ImVec2(8, 6);
 }
 }

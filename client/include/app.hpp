@@ -56,5 +56,9 @@ class ChatOverlay : public Wiesel::Layer {
   bool cleanup_ = false;
   std::vector<std::string> messages_;
   std::unordered_map<int, std::string> users_;
+  std::string chat;
+  std::string ip;
+  std::string username;
+
 };
 }  // namespace WieselDemo

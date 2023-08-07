@@ -69,7 +69,6 @@ void ChatOverlay::OnImGuiRender() {
     for (const auto& item : messages_) {
       ImGui::TextWrapped("%s", item.c_str());
     }
-    static std::string chat;
     // Get remaining vertical space available in the current window
     ImVec2 contentRegionAvail = ImGui::GetContentRegionAvail();
 
@@ -77,16 +76,17 @@ void ChatOverlay::OnImGuiRender() {
     float inputTextHeight = ImGui::GetTextLineHeightWithSpacing();
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + contentRegionAvail.y -
                          inputTextHeight);
+    static const int kSendButtonWidth = 80;
     float inputTextWidth =
         ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x -
-        ImGui::CalcTextSize("Send").x - ImGui::GetStyle().WindowPadding.x;
+        kSendButtonWidth - ImGui::GetStyle().WindowPadding.x;
 
     ImGui::PushItemWidth(inputTextWidth);
     bool send = false;
     ImGui::InputText("##", &chat, ImGuiInputTextFlags_None);
     ImGui::PopItemWidth();
     ImGui::SameLine();
-    if (ImGui::Button("Send") || send) {
+    if (ImGui::Button("Send", ImVec2(kSendButtonWidth, 0)) || send) {
       client_->SendMessage(chat);
       messages_.push_back(client_->username() + ": " + chat);
       chat = "";
@@ -103,8 +103,6 @@ void ChatOverlay::OnImGuiRender() {
     ImGui::End();
   } else {
     ImGui::Begin("Connect", nullptr, ImGuiWindowFlags_NoCollapse);
-    static std::string ip;
-    static std::string username;
     ImGui::InputText(PrefixLabel("IP").c_str(), &ip);
     ImGui::InputText(PrefixLabel("Username").c_str(), &username);
     if (ImGui::Button("Connect")) {
