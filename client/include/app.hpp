@@ -46,6 +46,7 @@ class ChatOverlay : public Wiesel::Layer {
   void OnUserDisconnect(znet::Ref<UserDisconnectedPacket> packet);
   void OnServerSettings(znet::Ref<ServerSettingsPacket> packet);
 
+  void OpenLink(const std::string& url);
  private:
   ChatApplication& app_;
   znet::Ref<ChatClient> client_;

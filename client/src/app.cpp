@@ -159,6 +159,22 @@ void ChatOverlay::OnServerSettings(znet::Ref<ServerSettingsPacket> packet) {
   users_ = packet->user_list_;
 }
 
+void ChatOverlay::OpenLink(const std::string& url) {
+#ifdef _WIN32
+    // Note: executable path must use  backslashes!
+    ::ShellExecuteA(NULL, "open", path, NULL, NULL, SW_SHOWDEFAULT);
+#else
+#if __APPLE__
+    const char* open_executable = "open";
+#else
+    const char* open_executable = "xdg open";
+#endif
+  char command[256];
+    snprintf(command, 256, "%s \"%s\"", open_executable, url.c_str());
+    system(command);
+#endif
+}
+
 void ChatApplication::Init() {
   LOG_DEBUG("Init");
   PushOverlay(CreateReference<ChatOverlay>(*this));
