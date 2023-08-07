@@ -162,7 +162,7 @@ void ChatOverlay::OnServerSettings(znet::Ref<ServerSettingsPacket> packet) {
 void ChatOverlay::OpenLink(const std::string& url) {
 #ifdef _WIN32
     // Note: executable path must use  backslashes!
-    ::ShellExecuteA(NULL, "open", path, NULL, NULL, SW_SHOWDEFAULT);
+    ::ShellExecuteA(NULL, "open", url.c_str(), NULL, NULL, SW_SHOWDEFAULT);
 #else
 #if __APPLE__
     const char* open_executable = "open";
